@@ -1,0 +1,14 @@
+{
+    "domain": "bwt_perla",
+    "name": "BWT Perla",
+    "documentation": "https://github.com/pafailly/ha-bwt-cloud",
+    "issue_tracker": "https://github.com/pafailly/ha-bwt-cloud/issues",
+    "codeowners": [],
+    "config_flow": true,
+    "dependencies": [],
+    "requirements": [
+        "beautifulsoup4>=4.12.0"
+    ],
+    "version": "1.0.0",
+    "iot_class": "cloud_polling"
+}
