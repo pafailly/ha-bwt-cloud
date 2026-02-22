@@ -32,7 +32,8 @@ class BWTDataUpdateCoordinator(DataUpdateCoordinator):
         self._last_water_consumption: int = 0
 
         # Use a dedicated session with cookie jar so login cookies persist
-        self._cookie_jar = aiohttp.CookieJar()
+        # unsafe=True allows cookies for IP-based and non-standard domains
+        self._cookie_jar = aiohttp.CookieJar(unsafe=True)
         self._session = aiohttp.ClientSession(cookie_jar=self._cookie_jar)
 
         self.api = BwtCloudApi(

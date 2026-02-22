@@ -43,7 +43,7 @@ class BWTConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 # Validate credentials by attempting authentication
                 try:
                     session = aiohttp.ClientSession(
-                        cookie_jar=aiohttp.CookieJar()
+                        cookie_jar=aiohttp.CookieJar(unsafe=True)
                     )
                     try:
                         api = BwtCloudApi(

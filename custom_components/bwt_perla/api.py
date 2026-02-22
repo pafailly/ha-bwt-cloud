@@ -166,12 +166,21 @@ class BwtCloudApi:
         if resp.status in (401, 403):
             self._authenticated = False
             raise BwtAuthError("Session expired")
+        if resp.status != 200:
+            raise BwtApiError(
+                f"Device page returned status {resp.status}"
+            )
 
-        text = await resp.text()
-        soup = BeautifulSoup(text, "html.parser")
+        page_bytes = await resp.read()
+        soup = BeautifulSoup(page_bytes, "html.parser")
         live_div = soup.find("div", {"data-controller": "live"})
 
         if not live_div:
+            _LOGGER.warning(
+                "Live div not found on device page (length=%d, url=%s)",
+                len(page_bytes),
+                str(resp.url),
+            )
             raise BwtApiError("Live div not found on device page")
 
         props_value = live_div.get("data-live-props-value", "")
@@ -187,7 +196,11 @@ class BwtCloudApi:
             resp = await self._session.post(
                 BWT_LOAD_CONSO_URL,
                 data={"data": json.dumps(payload_data)},
-                headers={"Accept": "application/vnd.live-component+html"},
+                headers={
+                    "Accept": "application/vnd.live-component+html",
+                    "Content-Type": "application/x-www-form-urlencoded",
+                },
+                allow_redirects=True,
                 timeout=CONNECT_TIMEOUT,
             )
         except (aiohttp.ClientError, TimeoutError) as err:
@@ -196,12 +209,22 @@ class BwtCloudApi:
         if resp.status in (401, 403):
             self._authenticated = False
             raise BwtAuthError("Session expired")
+        if resp.status != 200:
+            raise BwtApiError(
+                f"loadConso returned status {resp.status}"
+            )
 
-        text = await resp.text()
-        soup = BeautifulSoup(text, "html.parser")
+        conso_bytes = await resp.read()
+        soup = BeautifulSoup(conso_bytes, "html.parser")
         graph_div = soup.find("div", id="graph_device")
 
         if not graph_div:
+            _LOGGER.warning(
+                "graph_device div not found in loadConso response "
+                "(length=%d, snippet=%.500s)",
+                len(conso_bytes),
+                conso_bytes[:500],
+            )
             return {}
 
         dataset = graph_div.get("data-chart-dataset-value", "{}")
@@ -220,6 +243,8 @@ class BwtCloudApi:
 
         # Parse first line of data (most recent)
         lines = dataset_json.get("lines", [])
+        _LOGGER.debug("Consumption dataset keys: %s, lines count: %d",
+                       list(dataset_json.keys()), len(lines))
         if lines:
             first_line = lines[0]
             if len(first_line) >= 5:
